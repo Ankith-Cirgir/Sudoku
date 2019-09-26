@@ -2,7 +2,9 @@
 Sudoku Game
 
 Instructions:
-  Left-Click : To select a number which is to be filled in the block
+'Left-Click' : To select a number which is to be filled in the block
+
+Click 'r': To reset the Game 
 
 
 
