@@ -8,7 +8,6 @@ FPS = 60
 
 
 #GRID
-
 WINDOWMULTIPLIER = 3
 WINDOWSIZE = 162
 
@@ -28,7 +27,7 @@ LIGHTGRAY = (190,190,190)
 BLACK = (0,0,0)
 WHITE = (255,255,255)
 BLUE = (0,102,255)
-GREEN = (0,255,0)
+
 
 
 
@@ -53,27 +52,32 @@ def main():
 	while True:
 		
 		drawGrid()
-		currentGrid = intitiateCells()
+		
 		displayCells(currentGrid)
 		for event in pygame.event.get():
-			if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
+			if (event.type == pygame.KEYDOWN and event.key == pygame.K_q) or (event.type == pygame.QUIT):
 				sys.exit()
-			if event.type == MOUSEMOTION:
-				mousex,mousey = event.pos
+
 			if event.type == pygame.MOUSEBUTTONUP:
-				mousex,mousey = event.pos
 				mouseClicked = True
 		if mouseClicked == True:
+			mousex,mousey = event.pos
 			print(mousex,mousey)
 			currentGrid = displaySelectedNumber(mousex,mousey,currentGrid)
+			mouseClicked = False
+			
+			
+
+		
 
 		pygame.display.update()
-		FPSCLOCK.tick(FPS)
+		
 		DISPLAYSURF.fill(WHITE)
-		displayCells(currentGrid)
+		SolveSudoku(currentGrid)
 		drawGrid()
+		displayCells(currentGrid)
 		drawBox(mousex,mousey)
-
+		FPSCLOCK.tick(FPS)
 		#pygame.display.update()
 		#FPSCLOCK.tick(FPS)
 
@@ -119,17 +123,17 @@ def displayCells(currentGrid):
                 #(item[0] * CELLSIZE) Positions in the right Cell
                 #(xFactor*NUMBERSIZE) Offsets to position number    
 			
-			if cellData.count(' ') < 8:    
-				populateCells(number,(item[0]*CELLSIZE)+(xFactor*NUMBERSIZE),(item[1]*CELLSIZE)+(yFactor*NUMBERSIZE),'small')
-			else:
-				populateCells(number,(item[0]*CELLSIZE),(item[1]*CELLSIZE),'large')
+				if cellData.count(' ') < 8:    
+					populateCells(number,(item[0]*CELLSIZE)+(xFactor*NUMBERSIZE),(item[1]*CELLSIZE)+(yFactor*NUMBERSIZE),'small')
+				else:
+					populateCells(number,(item[0]*CELLSIZE),(item[1]*CELLSIZE),'large')
 	return None
 
 def populateCells(cellData, x, y,size):
 	if size =='small':
 		cellSurf = BASICFONT.render('%s'%(cellData),True,LIGHTGRAY)
 	elif size == 'large':
-		cellSurf = LARGEFONT.render('%s'%(cellData),True,GREEN)
+		cellSurf = LARGEFONT.render('%s'%(cellData),True,BLACK)
 
 
 	cellRect = cellSurf.get_rect()
@@ -177,6 +181,61 @@ def displaySelectedNumber(mousex, mousey, currentGrid):
 
 
 
+
+def SolveSudoku(currentGrid):
+	for item in currentGrid: # item is x,y co-ordinate from 0-8
+		cellData = currentGrid[item]
+		if cellData.count(' ') == 8: # only look at those with one number remaining
+			for number in cellData: # Determine the number there
+				if number != ' ':
+					updateNumber = number
+			currentGrid = removeX(currentGrid, item, updateNumber)
+			currentGrid = removeY(currentGrid, item, updateNumber)
+			currentGrid = removeGrid(currentGrid, item, updateNumber)
+	return currentGrid
+
+
+def removeX(currentGrid, item, number):
+	for x in range(0,9):
+		if x != item[0]:
+			currentState = currentGrid[(x,item[1])]
+			currentState[number-1] = ' '
+			currentGrid[(x,item[1])] = currentState
+	return currentGrid
+
+def removeY(currentGrid, item, number):
+	for y in range(0,9):
+		if y != item[1]:
+			currentState = currentGrid[(item[0],y)]
+			currentState[number-1] = ' '
+			currentGrid[(item[0],y)] = currentState
+	return currentGrid
+
+
+
+
+def removeGrid(currentGrid, item, number):
+
+	if item[0] < 3:
+		xGrid = [0,1,2]
+	elif item[0] > 5:
+		xGrid = [6,7,8]
+	else: xGrid = [3,4,5]
+
+	if item[1] < 3:
+		yGrid = [0,1,2]
+	elif item[1] > 5:
+		yGrid = [6,7,8]
+	else: yGrid = [3,4,5]
+    
+    #iterates through each of the nine numbers in the grid
+	for x in xGrid:
+		for y in yGrid:
+			if (x,y) != item: # for all squares except the one containing the number
+				currentState = currentGrid[(x,y)] # isolates the numbers still available for that cell
+				currentState[number-1] = ' ' # make them blank.
+				currentGrid[(x,y)] = currentState
+	return currentGrid
 
 
 
