@@ -57,7 +57,8 @@ def main():
 		for event in pygame.event.get():
 			if (event.type == pygame.KEYDOWN and event.key == pygame.K_q) or (event.type == pygame.QUIT):
 				sys.exit()
-
+			if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+				currentGrid = intitiateCells()
 			if event.type == pygame.MOUSEBUTTONUP:
 				mouseClicked = True
 		if mouseClicked == True:
@@ -66,10 +67,6 @@ def main():
 			currentGrid = displaySelectedNumber(mousex,mousey,currentGrid)
 			mouseClicked = False
 			
-			
-
-		
-
 		pygame.display.update()
 		
 		DISPLAYSURF.fill(WHITE)
