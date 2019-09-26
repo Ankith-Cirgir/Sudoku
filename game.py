@@ -1,9 +1,10 @@
 import pygame,sys
 from collections import defaultdict
+from pygame.locals import *
 pygame.init()
 
 #FPS
-FPS = 30
+FPS = 60
 
 
 #GRID
@@ -26,15 +27,18 @@ NUMBERSIZE = int(CELLSIZE/3)
 LIGHTGRAY = (190,190,190)
 BLACK = (0,0,0)
 WHITE = (255,255,255)
+BLUE = (0,102,255)
+GREEN = (0,255,0)
 
 
 
 #FONT
-global BASICFONT,FONTSIZE
+global BASICFONT,FONTSIZE,LARGEFONT,LARGEFONTSIZE
 FONTSIZE = 15
-BASICFONT = pygame.font.Font('C:\\Users\\sys\\Desktop\\freesansbold.ttf',FONTSIZE)
+LARGEFONTSIZE = 55
+BASICFONT = pygame.font.Font('C:\\Users\\sys\\Desktop\\game\\freesansbold.ttf',FONTSIZE)
 BASICFONT = pygame.font.SysFont('arial', FONTSIZE)
-
+LARGEFONT = pygame.font.SysFont('arial', LARGEFONTSIZE)
 
 def main():
 	global FPSCLOCK,DISPLAYSURF
@@ -43,7 +47,7 @@ def main():
 	mousex = 0
 	mousey = 0
 	pygame.display.set_caption("Sudoku !!")
-
+	DISPLAYSURF.fill(WHITE)
 	currentGrid = intitiateCells()
 	FPSCLOCK = pygame.time.Clock()
 	while True:
@@ -54,23 +58,24 @@ def main():
 		for event in pygame.event.get():
 			if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
 				sys.exit()
-			#elif event.type == pygame.MOUSEMOTION:
-			#	mousex,mousey = event.pos
-			#elif event.type == pygame.MOUSEBUTTIONUP:
-			#	mousex,mousey = event.pos
-			#	mouseClicked = True
-		#if mouseClicked:
-		#	print(mousex)
-		#	print(mousey)
+			if event.type == MOUSEMOTION:
+				mousex,mousey = event.pos
+			if event.type == pygame.MOUSEBUTTONUP:
+				mousex,mousey = event.pos
+				mouseClicked = True
+		if mouseClicked == True:
+			print(mousex,mousey)
+			currentGrid = displaySelectedNumber(mousex,mousey,currentGrid)
+
 		pygame.display.update()
 		FPSCLOCK.tick(FPS)
 		DISPLAYSURF.fill(WHITE)
 		displayCells(currentGrid)
 		drawGrid()
-		#drawBox(mousex,mousey)
+		drawBox(mousex,mousey)
 
-		pygame.display.update()
-		FPSCLOCK.tick(FPS)
+		#pygame.display.update()
+		#FPSCLOCK.tick(FPS)
 
 
 
@@ -113,18 +118,62 @@ def displayCells(currentGrid):
 					yFactor = 2
                 #(item[0] * CELLSIZE) Positions in the right Cell
                 #(xFactor*NUMBERSIZE) Offsets to position number    
-			populateCells(number,(item[0]*CELLSIZE)+(xFactor*NUMBERSIZE),(item[1]*CELLSIZE)+(yFactor*NUMBERSIZE))
+			
+			if cellData.count(' ') < 8:    
+				populateCells(number,(item[0]*CELLSIZE)+(xFactor*NUMBERSIZE),(item[1]*CELLSIZE)+(yFactor*NUMBERSIZE),'small')
+			else:
+				populateCells(number,(item[0]*CELLSIZE),(item[1]*CELLSIZE),'large')
 	return None
 
-def populateCells(cellData, x, y):
-    cellSurf = BASICFONT.render('%s' %(cellData), True, LIGHTGRAY)
-    cellRect = cellSurf.get_rect()
-    cellRect.topleft = (x, y)
-    DISPLAYSURF.blit(cellSurf, cellRect)
+def populateCells(cellData, x, y,size):
+	if size =='small':
+		cellSurf = BASICFONT.render('%s'%(cellData),True,LIGHTGRAY)
+	elif size == 'large':
+		cellSurf = LARGEFONT.render('%s'%(cellData),True,GREEN)
 
 
+	cellRect = cellSurf.get_rect()
+	cellRect.topleft = (x, y)
+	DISPLAYSURF.blit(cellSurf, cellRect)
 
 
+def drawBox(mousex, mousey):
+	boxx =((mousex*27) / WINDOWWIDTH) * (NUMBERSIZE )
+	boxy =((mousey*27) / WINDOWHEIGHT) * (NUMBERSIZE )
+	pygame.draw.rect(DISPLAYSURF, BLUE, (boxx,boxy,NUMBERSIZE,NUMBERSIZE), 1)
+
+
+def displaySelectedNumber(mousex, mousey, currentGrid):
+	xNumber = (mousex*27) / WINDOWWIDTH # range 0 - 26
+	yNumber = (mousey*27) / WINDOWWIDTH # range 0 - 26
+	#Determine a 0,1 or 2 for x and y
+	modXNumber = int(xNumber % 3)
+	modYNumber = int(yNumber % 3)
+	if modXNumber == 0:
+		xChoices = [1,4,7]
+		number = xChoices[modYNumber]        
+	elif modXNumber == 1:
+		xChoices = [2,5,8]
+		number = xChoices[modYNumber]
+	else:
+		xChoices = [3,6,9]
+		number = xChoices[modYNumber]
+
+	xCellNumber = int(xNumber / 3)
+	yCellNumber = int(yNumber / 3)
+   
+	currentState = currentGrid[xCellNumber,yCellNumber]
+	inNum = 0
+    
+	while inNum < 9:
+		if inNum+1 != number:
+			currentState[inNum] = ' '
+		else:
+			currentState[inNum] = number
+
+		currentGrid[xCellNumber,yCellNumber] = currentState
+		inNum += 1
+	return currentGrid
 
 
 
