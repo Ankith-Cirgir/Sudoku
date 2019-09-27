@@ -1,5 +1,4 @@
 import pygame,sys
-from collections import defaultdict
 from pygame.locals import *
 pygame.init()
 
