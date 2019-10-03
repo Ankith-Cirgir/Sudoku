@@ -1,10 +1,24 @@
 import pygame,sys
-from collections import defaultdict
 from pygame.locals import *
+from pygame import mixer,time
+from tkinter import *
+from tkinter import messagebox
 pygame.init()
 
+
+#MIXER
+pygame.mixer.pre_init(44100, 16, 2, 4096)
+
+global endgame
+endgame = False
+
+#if not endgame:
+#	pygame.mixer.music.load("415511__jpmusic82__melody-loop-mix-128-bpm.mp3")
+#	pygame.mixer.music.play(-1,0.0)
+
+
 #FPS
-FPS = 60
+FPS = 160
 
 
 #GRID
@@ -27,7 +41,7 @@ LIGHTGRAY = (190,190,190)
 BLACK = (0,0,0)
 WHITE = (255,255,255)
 BLUE = (0,102,255)
-
+green = (0,255,0)
 
 
 
@@ -38,45 +52,61 @@ LARGEFONTSIZE = 55
 BASICFONT = pygame.font.Font('C:\\Users\\sys\\Desktop\\game\\freesansbold.ttf',FONTSIZE)
 BASICFONT = pygame.font.SysFont('arial', FONTSIZE)
 LARGEFONT = pygame.font.SysFont('arial', LARGEFONTSIZE)
-
+font = pygame.font.SysFont('arial', LARGEFONTSIZE)
+over = pygame.font.Font("Redemption.ttf",90)
 def main():
 	global FPSCLOCK,DISPLAYSURF
 	DISPLAYSURF = pygame.display.set_mode((WINDOWWIDTH,WINDOWHEIGHT))
 	mouseClicked = False
 	mousex = 0
 	mousey = 0
+	endgame = False
 	pygame.display.set_caption("Sudoku !!")
 	DISPLAYSURF.fill(WHITE)
 	currentGrid = intitiateCells()
 	FPSCLOCK = pygame.time.Clock()
 	while True:
 		
-		drawGrid()
 		
-		displayCells(currentGrid)
+		
 		for event in pygame.event.get():
 			if (event.type == pygame.KEYDOWN and event.key == pygame.K_q) or (event.type == pygame.QUIT):
+				gameover = mixer.Sound("365738__mattix__game-over-02.wav")
+				
+				Tk().wm_withdraw()
+				result = messagebox.askokcancel('Exit?','Are you sure you want to exit the game?')
+				if not result:
+					continue
+				endgame = True
+				gameover.play()
+				DISPLAYSURF.fill(BLACK)
+				text = over.render('Game Over !!!', True, (255, 0, 0))
+				textRect = text.get_rect()
+				DISPLAYSURF.blit(text,(WINDOWHEIGHT / 4,WINDOWWIDTH / 4))
+				pygame.display.update()
+				time.wait(1300)
 				sys.exit()
-
+			if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+				currentGrid = intitiateCells()
 			if event.type == pygame.MOUSEBUTTONUP:
 				mouseClicked = True
 		if mouseClicked == True:
+			sound = mixer.Sound("448080__breviceps__wet-click.wav")
+			channel = sound.play()
 			mousex,mousey = event.pos
-			print(mousex,mousey)
 			currentGrid = displaySelectedNumber(mousex,mousey,currentGrid)
 			mouseClicked = False
 			
-			
-
-		
-
 		pygame.display.update()
-		
-		DISPLAYSURF.fill(WHITE)
-		SolveSudoku(currentGrid)
-		drawGrid()
-		displayCells(currentGrid)
-		drawBox(mousex,mousey)
+		if not endgame:
+			drawGrid()
+			displayCells(currentGrid)
+			
+			DISPLAYSURF.fill(WHITE)
+			SolveSudoku(currentGrid)
+			drawGrid()
+			displayCells(currentGrid)
+			drawBox(mousex,mousey)
 		FPSCLOCK.tick(FPS)
 		#pygame.display.update()
 		#FPSCLOCK.tick(FPS)
@@ -121,8 +151,7 @@ def displayCells(currentGrid):
 				else:
 					yFactor = 2
                 #(item[0] * CELLSIZE) Positions in the right Cell
-                #(xFactor*NUMBERSIZE) Offsets to position number    
-			
+                #(xFactor*NUMBERSIZE) Offsets to position number
 				if cellData.count(' ') < 8:    
 					populateCells(number,(item[0]*CELLSIZE)+(xFactor*NUMBERSIZE),(item[1]*CELLSIZE)+(yFactor*NUMBERSIZE),'small')
 				else:
@@ -192,6 +221,9 @@ def SolveSudoku(currentGrid):
 			currentGrid = removeX(currentGrid, item, updateNumber)
 			currentGrid = removeY(currentGrid, item, updateNumber)
 			currentGrid = removeGrid(currentGrid, item, updateNumber)
+	currentGrid = onlyNinX(currentGrid)
+	currentGrid = onlyNinY(currentGrid)
+	currentGrid = onlyNinGrid(currentGrid)
 	return currentGrid
 
 
@@ -236,6 +268,125 @@ def removeGrid(currentGrid, item, number):
 				currentState[number-1] = ' ' # make them blank.
 				currentGrid[(x,y)] = currentState
 	return currentGrid
+
+
+
+# Go through each cell in each row
+# check if it contains a number which is not in the rest of the row.
+def onlyNinX(currentGrid):
+
+    # check all items in currentGrid list
+	for item in currentGrid:
+        # create two empty lists
+		allNumbers = []
+		currentNumbers = []
+        # determine all numbers remaining in the row - store in allNumbers
+		for xRange in range(0,9):
+			for rowNumbers in currentGrid[(xRange,item[1])]:
+				if rowNumbers != ' ':
+					allNumbers.append(rowNumbers)
+                    
+        # determine numbers remaining in individual cell being looked at - store in currentNumbers
+		for cellNumbers in currentGrid[item]:
+			if cellNumbers != ' ':
+				currentNumbers.append(cellNumbers)
+              
+        # look at numbers remaining in a cell. Check if they only appear in the row once.        
+		if len(currentNumbers) > 1: 
+			for checkNumber in currentNumbers: 
+				if allNumbers.count(checkNumber) == 1:  
+                    # at this stage we know checkNumber appears only once, so we now update grid
+					currentState = currentGrid[item] 
+					for individualNumber in currentState:
+						if individualNumber != checkNumber and individualNumber != ' ': 
+							currentState[individualNumber-1] = ' ' 
+							currentGrid[item] = currentState
+	return currentGrid
+
+
+def onlyNinY(currentGrid):
+
+    # check all items in currentGrid list
+	for item in currentGrid:
+        # create two empty lists
+		allNumbers = []
+		currentNumbers = []
+        # determine all numbers remaining in the column - store in allNumbers
+		for yRange in range(0,9):
+			for columnNumbers in currentGrid[(item[0],yRange)]:
+				if columnNumbers != ' ':
+					allNumbers.append(columnNumbers)
+        # determine numbers remaining in individual cell being looked at - store in currentNumbers
+		for cellNumbers in currentGrid[item]:
+			if cellNumbers != ' ':
+				currentNumbers.append(cellNumbers)
+        # look at numbers remaining in a cell. Check if they only appear in the column once.        
+		if len(currentNumbers) > 1: 
+			for checkNumber in currentNumbers: 
+				if allNumbers.count(checkNumber) == 1:  
+                    
+                    # at this stage we know checkNumber appears only once, so we now update grid
+					currentState = currentGrid[item] 
+					for individualNumber in currentState: 
+						if individualNumber != checkNumber and individualNumber != ' ': 
+							currentState[individualNumber-1] = ' ' 
+							currentGrid[item] = currentState 
+	return currentGrid
+
+
+
+
+
+def onlyNinGrid(currentGrid):
+
+    # check all items in currentGrid list
+	for item in currentGrid:
+
+    # determine the co-ordinates for the grid we are dealing with
+    
+		if item[0] < 3:
+			xGrid = [0,1,2]
+		elif item[0] > 5:
+			xGrid = [6,7,8]
+		else: xGrid = [3,4,5]
+
+		if item[1] < 3:
+			yGrid = [0,1,2]
+		elif item[1] > 5:
+			yGrid = [6,7,8]
+		else: yGrid = [3,4,5]
+
+        # create two empty lists
+		allNumbers = []
+		currentNumbers = []
+
+        #iterates through each of the nine numbers in the grid
+		for x in xGrid:
+			for y in yGrid:
+            
+                # determine all numbers remaining in the grid - store in allNumbers
+				for gridNumbers in currentGrid[(x,y)]:
+					if gridNumbers != ' ':
+						allNumbers.append(gridNumbers)
+                        
+            # determine numbers remaining in individual cell being looked at - store in currentNumbers
+		for cellNumbers in currentGrid[item]:
+			if cellNumbers != ' ':
+				currentNumbers.append(cellNumbers)
+        
+        # look at numbers remaining in a cell. Check if they only appear in the grid once.        
+		if len(currentNumbers) > 1: 
+			for checkNumber in currentNumbers: #
+				if allNumbers.count(checkNumber) == 1: 
+                    
+                    # at this stage we know checkNumber appears only once, so we now update grid
+					currentState = currentGrid[item] 
+					for individualNumber in currentState: 
+						if individualNumber != checkNumber and individualNumber != ' ': 
+							currentState[individualNumber-1] = ' ' 
+							currentGrid[item] = currentState 
+	return currentGrid
+
 
 
 
